@@ -20,6 +20,10 @@ final class Simulator {
 		FILLED_TILE
 	};
 
+	private static enum ChangeMode {
+		PLACE, DELETE
+	}
+
 	private final SimView view = new SimView(this);
 	private final HashMap<Integer, HashMap<Integer, Tile>> objMap = new HashMap<>();
 	private int tileSize = 20, halfViewW, halfViewH, viewX1, viewY1, viewX2, viewY2, viewDX, viewDY, camSpeed = 1,
@@ -33,6 +37,7 @@ final class Simulator {
 	});
 
 	private PlaceMode mode = PlaceMode.FILLED_TILE;
+	private ChangeMode changeMode;
 
 	void draw(Graphics g) {
 		g.drawString(String.format("(%d, %d)", camX, camY), 0, 12);
@@ -82,17 +87,25 @@ final class Simulator {
 		resized();
 	}
 
-	void resized() {
-		halfViewW = view.getWidth() / tileSize / 2;
-		halfViewH = view.getHeight() / tileSize / 2;
-		updateViewRect();
-	}
-
-	void clicked(MouseEvent e) {
-		Point p = e.getPoint();
-		int x = p.x / tileSize - halfViewW + camX, y = p.y / tileSize - halfViewH + camY;
+	void pressed(MouseEvent e) {
 		switch (e.getButton()) {
 		case MouseEvent.BUTTON1:
+			changeMode = ChangeMode.PLACE;
+			break;
+		case MouseEvent.BUTTON3:
+			changeMode = ChangeMode.DELETE;
+		}
+		changeBlock(e.getPoint());
+	}
+
+	void drag(Point loc) {
+		changeBlock(loc);
+	}
+
+	private void changeBlock(Point p) {
+		int x = p.x / tileSize - halfViewW + camX, y = p.y / tileSize - halfViewH + camY;
+		switch (changeMode) {
+		case PLACE:
 			Tile t = null;
 			switch (mode) {
 			case FILLED_TILE:
@@ -100,12 +113,18 @@ final class Simulator {
 			}
 			put(x, y, t);
 			break;
-		case MouseEvent.BUTTON3:
+		case DELETE:
 			switch (mode) {
 			case FILLED_TILE:
 				put(x, y, null);
 			}
 		}
+	}
+
+	void resized() {
+		halfViewW = view.getWidth() / tileSize / 2;
+		halfViewH = view.getHeight() / tileSize / 2;
+		updateViewRect();
 	}
 
 	private void createGUI() {

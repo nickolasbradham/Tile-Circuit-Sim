@@ -42,8 +42,14 @@ final class SimView extends JPanel {
 		addMouseListener(new MouseAdapter() {
 
 			@Override
-			public final void mouseClicked(MouseEvent e) {
-				sim.clicked(e);
+			public final void mousePressed(MouseEvent e) {
+				sim.pressed(e);
+			}
+		});
+		addMouseMotionListener(new MouseAdapter() {
+			@Override
+			public final void mouseDragged(MouseEvent e) {
+				sim.drag(e.getPoint());
 			}
 		});
 		addComponentListener(new ComponentAdapter() {
