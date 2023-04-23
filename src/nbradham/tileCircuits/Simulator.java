@@ -1,28 +1,38 @@
 package nbradham.tileCircuits;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.border.LineBorder;
 
 import nbradham.tileCircuits.tiles.FilledTile;
 import nbradham.tileCircuits.tiles.Tile;
+import nbradham.tileCircuits.tiles.Wire;
 
 final class Simulator {
 
 	private static enum PlaceMode {
-		FILLED_TILE
+		FILLED_TILE, WIRE
 	};
 
 	private static enum ChangeMode {
 		PLACE, DELETE
 	}
+
+	private static final Tile NULL_TILE = new Tile();
 
 	private final SimView view = new SimView(this);
 	private final HashMap<Integer, HashMap<Integer, Tile>> objMap = new HashMap<>();
@@ -35,20 +45,19 @@ final class Simulator {
 		updateViewRect();
 		view.repaint();
 	});
+	private JButton[] toolGroup;
 
-	private PlaceMode mode = PlaceMode.FILLED_TILE;
+	private PlaceMode placeMode = PlaceMode.FILLED_TILE;
 	private ChangeMode changeMode;
 
 	void draw(Graphics g) {
 		g.drawString(String.format("(%d, %d)", camX, camY), 0, 12);
 		int fillX, tileX;
-		Tile drawTile;
 		for (short x = 0; x <= viewDX; ++x) {
 			fillX = x * tileSize;
 			tileX = viewX1 + x;
 			for (short y = 0; y <= viewDY; ++y)
-				if ((drawTile = get(tileX, viewY1 + y)) != null)
-					drawTile.draw(g, fillX, y * tileSize, tileSize);
+				get(tileX, viewY1 + y).draw(g, fillX, y * tileSize, tileSize);
 		}
 	}
 
@@ -107,17 +116,17 @@ final class Simulator {
 		switch (changeMode) {
 		case PLACE:
 			Tile t = null;
-			switch (mode) {
+			switch (placeMode) {
 			case FILLED_TILE:
 				t = new FilledTile();
+				break;
+			case WIRE:
+				t = new Wire();
 			}
 			put(x, y, t);
 			break;
 		case DELETE:
-			switch (mode) {
-			case FILLED_TILE:
-				put(x, y, null);
-			}
+			put(x, y, null);
 		}
 	}
 
@@ -131,7 +140,20 @@ final class Simulator {
 		SwingUtilities.invokeLater(() -> {
 			JFrame frame = new JFrame("Circuit Sim");
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			frame.add(view);
+			frame.setLayout(new BorderLayout());
+
+			JPanel toolBar = new JPanel();
+			toolBar.setBorder(new LineBorder(Color.BLACK, 1));
+			toolBar.add(new JLabel("Tile:"));
+			ArrayList<JButton> toolsGroup = new ArrayList<>();
+
+			createAndAddJButton(toolBar, toolsGroup, "Solid", PlaceMode.FILLED_TILE).setEnabled(false);
+			createAndAddJButton(toolBar, toolsGroup, "Wire", PlaceMode.WIRE);
+
+			toolGroup = toolsGroup.toArray(new JButton[0]);
+
+			frame.add(toolBar, BorderLayout.BEFORE_FIRST_LINE);
+			frame.add(view, BorderLayout.CENTER);
 			frame.pack();
 			frame.setVisible(true);
 			view.requestFocus();
@@ -139,18 +161,19 @@ final class Simulator {
 		});
 	}
 
-	private void put(int x, int y, Tile val) {
+	private void put(int x, int y, Tile tile) {
 		HashMap<Integer, Tile> col = objMap.get(x);
 		if (col == null)
 			objMap.put(x, col = new HashMap<>());
-		col.put(y, val);
+		col.put(y, tile);
 	}
 
 	private Tile get(int x, int y) {
 		HashMap<Integer, Tile> col = objMap.get(x);
 		if (col == null)
-			return null;
-		return col.get(y);
+			return NULL_TILE;
+		Tile t = col.get(y);
+		return t == null ? NULL_TILE : t;
 	}
 
 	private void updateViewRect() {
@@ -160,6 +183,19 @@ final class Simulator {
 		viewY2 = camY + halfViewH;
 		viewDX = viewX2 - viewX1 + 1;
 		viewDY = viewY2 - viewY1 + 1;
+	}
+
+	private JButton createAndAddJButton(JPanel tools, ArrayList<JButton> toolsGroup, String label, PlaceMode mode) {
+		JButton button = new JButton(label);
+		button.addActionListener(e -> {
+			placeMode = mode;
+			for (JButton b : toolGroup)
+				b.setEnabled(true);
+			button.setEnabled(false);
+		});
+		tools.add(button);
+		toolsGroup.add(button);
+		return button;
 	}
 
 	public static void main(String[] args) {
