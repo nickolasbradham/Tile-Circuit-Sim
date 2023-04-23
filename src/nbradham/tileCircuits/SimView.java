@@ -2,8 +2,12 @@ package nbradham.tileCircuits;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 
@@ -30,10 +34,22 @@ final class SimView extends JPanel {
 			}
 		});
 		addMouseWheelListener(new MouseWheelListener() {
+			@Override
+			public final void mouseWheelMoved(MouseWheelEvent e) {
+				sim.mouseWheel(e);
+			}
+		});
+		addMouseListener(new MouseAdapter() {
 
 			@Override
-			public void mouseWheelMoved(MouseWheelEvent e) {
-				sim.mouseWheel(e);
+			public final void mouseClicked(MouseEvent e) {
+				sim.clicked(e);
+			}
+		});
+		addComponentListener(new ComponentAdapter() {
+			@Override
+			public final void componentResized(ComponentEvent e) {
+				sim.resized();
 			}
 		});
 	}

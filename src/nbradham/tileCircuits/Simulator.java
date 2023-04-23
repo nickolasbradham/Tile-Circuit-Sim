@@ -2,6 +2,7 @@ package nbradham.tileCircuits;
 
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.util.HashMap;
 
@@ -13,37 +14,41 @@ final class Simulator {
 
 	private final SimView view = new SimView(this);
 	private final HashMap<Integer, HashMap<Integer, Boolean>> objMap = new HashMap<>();
-	private int tileSize = 20;
-	private byte camX = 0, camY = 0, camDX = 0, camDY = 0;
+	private int tileSize = 20, halfViewW, halfViewH, viewX1, viewY1, viewX2, viewY2, viewDX, viewDY, camSpeed = 1,
+			camDX, camDY;
+	private short camX, camY;
 	private final Timer timer = new Timer(16, e -> {
 		camX += camDX;
 		camY += camDY;
+		updateViewRect();
 		view.repaint();
 	});
 
 	void draw(Graphics g) {
 		g.drawString(String.format("(%d, %d)", camX, camY), 0, 12);
-		int hw = view.getWidth() / tileSize / 2, hh = view.getHeight() / tileSize / 2, x1 = camX - hw, y1 = camY - hh,
-				x2 = camX + hw, y2 = camY + hh, dx = x2 - x1+1, dy = y2 - y1+1;
-		for (short x = 0; x <= dx; ++x)
-			for (short y = 0; y <= dy; ++y)
-				if (get(x1 + x, y1 + y))
-					g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+		int fillX, tileX;
+		for (short x = 0; x <= viewDX; ++x) {
+			fillX = x * tileSize;
+			tileX = viewX1 + x;
+			for (short y = 0; y <= viewDY; ++y)
+				if (get(tileX, viewY1 + y))
+					g.fillRect(fillX, y * tileSize, tileSize, tileSize);
+		}
 	}
 
 	void keyPressed(KeyEvent e) {
 		switch (e.getKeyCode()) {
 		case KeyEvent.VK_LEFT:
-			camDX = -1;
+			camDX = -camSpeed;
 			break;
 		case KeyEvent.VK_RIGHT:
-			camDX = 1;
+			camDX = camSpeed;
 			break;
 		case KeyEvent.VK_UP:
-			camDY = -1;
+			camDY = -camSpeed;
 			break;
 		case KeyEvent.VK_DOWN:
-			camDY = 1;
+			camDY = camSpeed;
 		}
 	}
 
@@ -62,6 +67,18 @@ final class Simulator {
 	void mouseWheel(MouseWheelEvent e) {
 		tileSize -= e.getUnitsToScroll();
 		tileSize = Math.max(1, Math.min(100, tileSize));
+		camSpeed = Math.max(1, 20 / tileSize);
+		resized();
+	}
+
+	void resized() {
+		halfViewW = view.getWidth() / tileSize / 2;
+		halfViewH = view.getHeight() / tileSize / 2;
+		updateViewRect();
+	}
+
+	void clicked(MouseEvent e) {
+
 	}
 
 	private void createGUI() {
@@ -92,6 +109,15 @@ final class Simulator {
 			return false;
 		Boolean val = col.get(y);
 		return val == null ? false : val;
+	}
+
+	private void updateViewRect() {
+		viewX1 = camX - halfViewW;
+		viewY1 = camY - halfViewH;
+		viewX2 = camX + halfViewW;
+		viewY2 = camY + halfViewH;
+		viewDX = viewX2 - viewX1 + 1;
+		viewDY = viewY2 - viewY1 + 1;
 	}
 
 	public static void main(String[] args) {
