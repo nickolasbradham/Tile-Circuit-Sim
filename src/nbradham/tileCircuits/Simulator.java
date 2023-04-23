@@ -11,10 +11,17 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import nbradham.tileCircuits.tiles.FilledTile;
+import nbradham.tileCircuits.tiles.Tile;
+
 final class Simulator {
 
+	private static enum PlaceMode {
+		FILLED_TILE
+	};
+
 	private final SimView view = new SimView(this);
-	private final HashMap<Integer, HashMap<Integer, Boolean>> objMap = new HashMap<>();
+	private final HashMap<Integer, HashMap<Integer, Tile>> objMap = new HashMap<>();
 	private int tileSize = 20, halfViewW, halfViewH, viewX1, viewY1, viewX2, viewY2, viewDX, viewDY, camSpeed = 1,
 			camDX, camDY;
 	private short camX, camY;
@@ -25,15 +32,18 @@ final class Simulator {
 		view.repaint();
 	});
 
+	private PlaceMode mode = PlaceMode.FILLED_TILE;
+
 	void draw(Graphics g) {
 		g.drawString(String.format("(%d, %d)", camX, camY), 0, 12);
 		int fillX, tileX;
+		Tile drawTile;
 		for (short x = 0; x <= viewDX; ++x) {
 			fillX = x * tileSize;
 			tileX = viewX1 + x;
 			for (short y = 0; y <= viewDY; ++y)
-				if (get(tileX, viewY1 + y))
-					g.fillRect(fillX, y * tileSize, tileSize, tileSize);
+				if ((drawTile = get(tileX, viewY1 + y)) != null)
+					drawTile.draw(g, fillX, y * tileSize, tileSize);
 		}
 	}
 
@@ -80,13 +90,25 @@ final class Simulator {
 
 	void clicked(MouseEvent e) {
 		Point p = e.getPoint();
-		put(p.x / tileSize - halfViewW + camX, p.y / tileSize - halfViewH + camY, true);
+		int x = p.x / tileSize - halfViewW + camX, y = p.y / tileSize - halfViewH + camY;
+		switch (e.getButton()) {
+		case MouseEvent.BUTTON1:
+			Tile t = null;
+			switch (mode) {
+			case FILLED_TILE:
+				t = new FilledTile();
+			}
+			put(x, y, t);
+			break;
+		case MouseEvent.BUTTON3:
+			switch (mode) {
+			case FILLED_TILE:
+				put(x, y, null);
+			}
+		}
 	}
 
 	private void createGUI() {
-		put(0, 0, true);
-		put(2, 0, true);
-		put(3, 3, true);
 		SwingUtilities.invokeLater(() -> {
 			JFrame frame = new JFrame("Circuit Sim");
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -98,19 +120,18 @@ final class Simulator {
 		});
 	}
 
-	private void put(int x, int y, boolean val) {
-		HashMap<Integer, Boolean> col = objMap.get(x);
+	private void put(int x, int y, Tile val) {
+		HashMap<Integer, Tile> col = objMap.get(x);
 		if (col == null)
 			objMap.put(x, col = new HashMap<>());
 		col.put(y, val);
 	}
 
-	private boolean get(int x, int y) {
-		HashMap<Integer, Boolean> col = objMap.get(x);
+	private Tile get(int x, int y) {
+		HashMap<Integer, Tile> col = objMap.get(x);
 		if (col == null)
-			return false;
-		Boolean val = col.get(y);
-		return val == null ? false : val;
+			return null;
+		return col.get(y);
 	}
 
 	private void updateViewRect() {
