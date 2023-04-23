@@ -13,11 +13,22 @@ import java.awt.event.MouseWheelListener;
 
 import javax.swing.JPanel;
 
+/**
+ * Handles GUI interactions.
+ * 
+ * @author Nickolas S. Bradham
+ *
+ */
 final class SimView extends JPanel {
 	private static final long serialVersionUID = 1L;
 
 	private final Simulator sim;
 
+	/**
+	 * Creates a new SimView instance.
+	 * 
+	 * @param simulator The simulator that will handle interactions.
+	 */
 	SimView(Simulator simulator) {
 		super();
 		sim = simulator;

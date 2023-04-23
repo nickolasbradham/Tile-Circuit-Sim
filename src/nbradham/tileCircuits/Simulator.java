@@ -22,12 +22,30 @@ import nbradham.tileCircuits.tiles.FilledTile;
 import nbradham.tileCircuits.tiles.Tile;
 import nbradham.tileCircuits.tiles.Wire;
 
+/**
+ * Handles core simulator functions.
+ * 
+ * @author Nickolas S. Bradham
+ *
+ */
 final class Simulator {
 
+	/**
+	 * Represents what to place when mouse is pressed.
+	 * 
+	 * @author Nickolas S. Bradham
+	 *
+	 */
 	private static enum PlaceMode {
 		FILLED_TILE, WIRE
 	};
 
+	/**
+	 * Represents what to do on clicked/dragged tile.
+	 * 
+	 * @author Nickolas S. Bradham
+	 *
+	 */
 	private static enum ChangeMode {
 		PLACE, DELETE
 	}
@@ -50,6 +68,11 @@ final class Simulator {
 	private PlaceMode placeMode = PlaceMode.FILLED_TILE;
 	private ChangeMode changeMode;
 
+	/**
+	 * Draws simulation to {@code g}.
+	 * 
+	 * @param g The graphics to draw to.
+	 */
 	void draw(Graphics g) {
 		g.drawString(String.format("(%d, %d)", camX, camY), 0, 12);
 		int fillX, tileX;
@@ -61,6 +84,11 @@ final class Simulator {
 		}
 	}
 
+	/**
+	 * Handles key press events.
+	 * 
+	 * @param e The KeyEvent to process.
+	 */
 	void keyPressed(KeyEvent e) {
 		switch (e.getKeyCode()) {
 		case KeyEvent.VK_LEFT:
@@ -77,6 +105,11 @@ final class Simulator {
 		}
 	}
 
+	/**
+	 * Handles key release events.
+	 * 
+	 * @param e The KeyEvent to process.
+	 */
 	void keyReleased(KeyEvent e) {
 		switch (e.getKeyCode()) {
 		case KeyEvent.VK_LEFT:
@@ -89,6 +122,11 @@ final class Simulator {
 		}
 	}
 
+	/**
+	 * Handles mouse wheel events.
+	 * 
+	 * @param e The MouseWheelEvent to process.
+	 */
 	void mouseWheel(MouseWheelEvent e) {
 		tileSize -= e.getUnitsToScroll();
 		tileSize = Math.max(1, Math.min(100, tileSize));
@@ -96,6 +134,11 @@ final class Simulator {
 		resized();
 	}
 
+	/**
+	 * Handles mouse button press events.
+	 * 
+	 * @param e The MouseEvent to process.
+	 */
 	void pressed(MouseEvent e) {
 		switch (e.getButton()) {
 		case MouseEvent.BUTTON1:
@@ -107,15 +150,26 @@ final class Simulator {
 		changeBlock(e.getPoint());
 	}
 
+	/**
+	 * Handles mouse drag events.
+	 * 
+	 * @param loc The location being dragged.
+	 */
 	void drag(Point loc) {
 		changeBlock(loc);
 	}
 
+	/**
+	 * Handles what to do at location {@code p}.
+	 * 
+	 * @param p The tile location to alter.
+	 */
+	@SuppressWarnings("incomplete-switch")
 	private void changeBlock(Point p) {
 		int x = p.x / tileSize - halfViewW + camX, y = p.y / tileSize - halfViewH + camY;
+		Tile t = null;
 		switch (changeMode) {
 		case PLACE:
-			Tile t = null;
 			switch (placeMode) {
 			case FILLED_TILE:
 				t = new FilledTile();
@@ -123,19 +177,23 @@ final class Simulator {
 			case WIRE:
 				t = new Wire();
 			}
-			put(x, y, t);
 			break;
-		case DELETE:
-			put(x, y, null);
 		}
+		put(x, y, t);
 	}
 
+	/**
+	 * Handles updating screen variables on simulator view resize.
+	 */
 	void resized() {
 		halfViewW = view.getWidth() / tileSize / 2;
 		halfViewH = view.getHeight() / tileSize / 2;
 		updateViewRect();
 	}
 
+	/**
+	 * Constructs and displays the GUI.
+	 */
 	private void createGUI() {
 		SwingUtilities.invokeLater(() -> {
 			JFrame frame = new JFrame("Circuit Sim");
@@ -161,6 +219,13 @@ final class Simulator {
 		});
 	}
 
+	/**
+	 * Places {@code tile} on to the field.
+	 * 
+	 * @param x    The X coordinate.
+	 * @param y    The Y coordinate.
+	 * @param tile The Tile to place.
+	 */
 	private void put(int x, int y, Tile tile) {
 		HashMap<Integer, Tile> col = objMap.get(x);
 		if (col == null)
@@ -168,6 +233,14 @@ final class Simulator {
 		col.put(y, tile);
 	}
 
+	/**
+	 * Retrieves a tile from the field.
+	 * 
+	 * @param x The X coordinate.
+	 * @param y The Y coordinate.
+	 * @return The Tile at ({@code x}, {@code y}) or {@link #NULL_TILE} if that
+	 *         space is empty.
+	 */
 	private Tile get(int x, int y) {
 		HashMap<Integer, Tile> col = objMap.get(x);
 		if (col == null)
@@ -176,6 +249,9 @@ final class Simulator {
 		return t == null ? NULL_TILE : t;
 	}
 
+	/**
+	 * Updates the viewport.
+	 */
 	private void updateViewRect() {
 		viewX1 = camX - halfViewW;
 		viewY1 = camY - halfViewH;
@@ -185,6 +261,16 @@ final class Simulator {
 		viewDY = viewY2 - viewY1 + 1;
 	}
 
+	/**
+	 * Creates a new JButton and adds it to {@code tools} and {@code toolsGroup}
+	 * with label {@code label}.
+	 * 
+	 * @param tools      The JPanel to add the button to.
+	 * @param toolsGroup The ArrayList keeping track of this button.
+	 * @param label      The text of the button.
+	 * @param mode       The mode that this button will switch to.
+	 * @return The JButton created.
+	 */
 	private JButton createAndAddJButton(JPanel tools, ArrayList<JButton> toolsGroup, String label, PlaceMode mode) {
 		JButton button = new JButton(label);
 		button.addActionListener(e -> {
@@ -198,6 +284,11 @@ final class Simulator {
 		return button;
 	}
 
+	/**
+	 * Constructs a new Simulator instance and calls {@link #createGUI()}.
+	 * 
+	 * @param args Ignored.
+	 */
 	public static void main(String[] args) {
 		new Simulator().createGUI();
 	}
