@@ -1,6 +1,7 @@
 package nbradham.tileCircuits;
 
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -78,7 +79,8 @@ final class Simulator {
 	}
 
 	void clicked(MouseEvent e) {
-
+		Point p = e.getPoint();
+		put(p.x / tileSize - halfViewW + camX, p.y / tileSize - halfViewH + camY, true);
 	}
 
 	private void createGUI() {
