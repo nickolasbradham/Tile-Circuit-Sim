@@ -51,9 +51,10 @@ final class Simulator {
 	}
 
 	private static final Tile NULL_TILE = new Tile();
+	private static final Tile FILLED_TILE = new FilledTile();
 
 	private final SimView view = new SimView(this);
-	private final HashMap<Integer, HashMap<Integer, Tile>> objMap = new HashMap<>();
+	private final HashMap<Integer, Tile> objMap = new HashMap<>();
 	private int tileSize = 20, halfViewW, halfViewH, viewX1, viewY1, viewX2, viewY2, viewDX, viewDY, camSpeed = 1,
 			camDX, camDY;
 	private short camX, camY;
@@ -172,7 +173,7 @@ final class Simulator {
 		case PLACE:
 			switch (placeMode) {
 			case FILLED_TILE:
-				t = new FilledTile();
+				t = FILLED_TILE;
 				break;
 			case WIRE:
 				t = new Wire();
@@ -227,10 +228,7 @@ final class Simulator {
 	 * @param tile The Tile to place.
 	 */
 	private void put(int x, int y, Tile tile) {
-		HashMap<Integer, Tile> col = objMap.get(x);
-		if (col == null)
-			objMap.put(x, col = new HashMap<>());
-		col.put(y, tile);
+		objMap.put(xyToKey(x, y), tile);
 	}
 
 	/**
@@ -242,10 +240,7 @@ final class Simulator {
 	 *         space is empty.
 	 */
 	private Tile get(int x, int y) {
-		HashMap<Integer, Tile> col = objMap.get(x);
-		if (col == null)
-			return NULL_TILE;
-		Tile t = col.get(y);
+		Tile t = objMap.get(xyToKey(x, y));
 		return t == null ? NULL_TILE : t;
 	}
 
@@ -282,6 +277,10 @@ final class Simulator {
 		tools.add(button);
 		toolsGroup.add(button);
 		return button;
+	}
+
+	private static int xyToKey(int x, int y) {
+		return x << 15 ^ y;
 	}
 
 	/**
