@@ -273,6 +273,7 @@ final class Simulator {
 			for (JButton b : toolGroup)
 				b.setEnabled(true);
 			button.setEnabled(false);
+			view.requestFocus();
 		});
 		tools.add(button);
 		toolsGroup.add(button);
